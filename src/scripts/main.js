@@ -1,10 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-    if (getCookie("hazard_modal_closed") === "1") {
-        const modal = document.getElementById("info-modal");
-        if (modal) modal.style.display = "none";
-        return;
-    }
-
     document.querySelectorAll("#info-modal .btn-close").forEach(function (btn) {
         btn.addEventListener("click", function () {
             setCookie("hazard_modal_closed", "1", 30); // 30 Tage

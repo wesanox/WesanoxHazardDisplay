@@ -170,16 +170,15 @@ class WesanoxHazardDisplay extends WireData implements Module
 
     /**
      * @param HookEvent $event
+     *
      * @return void
      */
-    public function getHazardModal(HookEvent $event)
+    public function getHazardModal(HookEvent $event): void
     {
         $html = $event->return;
 
         if($this->page->template($this->template_home) || $this->page->template($this->home)) {
             $insert = $this->renderHazardModal($this->page);
-
-            bd($insert);
 
             $html = ($this->page->template == $this->template_home || $this->page->template == $this->home ) ? preg_replace('/<\/body>/i', "$insert\n</body>", $html, 1) : $event->return;
 
@@ -189,11 +188,16 @@ class WesanoxHazardDisplay extends WireData implements Module
 
     /**
      * @param $p
+     *
      * @return string
      */
-    public function renderHazardModal($p)
+    public function renderHazardModal($p): string
     {
-        if ($p->checkbox_hazard) {
+        if (!empty($_COOKIE['hazard_modal_closed']) && $_COOKIE['hazard_modal_closed'] === '1') {
+            return '';
+        }
+
+        if ($p->checkbox_hazard && $p->text !== '' && (!$p->link_intern || $p->link_extern !== '')) {
             $link = ($p->link_extern !== '') ? $p->link_extern : (($p->link_intern) ? $p->link_intern->url : '');
             $text = ($p->link_text !== '') ? $p->link_text : (($p->link_intern) ? $p->link_intern->title : '');
 
