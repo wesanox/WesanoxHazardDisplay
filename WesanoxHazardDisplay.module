@@ -1,0 +1,258 @@
+<?php
+namespace ProcessWire;
+
+class WesanoxHazardDisplay extends WireData implements Module, ConfigurableModule
+{
+    public static function getModuleInfo()
+    {
+        return array(
+            'title' => 'wesanox Hazard Display Matrix',
+            'summary' => 'A Module to implement a Hazard Display Modal in ProcessWire.',
+            'version' => '0.1.1',
+            'author' => 'Frittenfritze',
+            'href' => 'https://wesanox.de',
+            'icon' => 'window-maximize',
+            'singular' => true,
+            'autoload' => true,
+            'installs' => [
+                'WesanoxFrameworkPackage',
+                'WesanoxHelperFields',
+                'WesanoxHelperClasses'
+            ],
+            'requires' => [
+                'ProcessWire>=3.0.246',
+                'PHP>=8.2.0',
+                'WesanoxFrameworkPackage>=0.0.1',
+                'WesanoxHelperFields>=0.0.1',
+                'WesanoxHelperClasses>=0.0.1',
+            ],
+        );
+    }
+
+    protected array $external_modules = [
+        'WesanoxFrameworkPackage' => 'https://github.com/wesanox/WesanoxFrameworkPackage/archive/refs/heads/main.zip',
+        'WesanoxHelperFields' => 'https://github.com/wesanox/WesanoxHelperFields/archive/refs/heads/main.zip',
+        'WesanoxHelperClasses' => 'https://github.com/wesanox/WesanoxHelperClasses/archive/refs/heads/main.zip',
+    ];
+
+    /**
+     * @var Module|_Module|null $helper_classes
+     * @var Module|_Module|null $helper_fields
+     */
+    protected Module|_Module|null $helper_fields;
+    protected Module|_Module|null $helper_classes;
+
+    /**
+     * @var array $fields_array
+     */
+    protected array $fields_array = [];
+
+    /**
+     * @var string $template_options
+     */
+    protected string $template_home = 'template_home';
+    protected string $home = 'home';
+
+    /**
+     * @throws WirePermissionException
+     */
+    function __construct()
+    {
+        parent::__construct();
+
+        $this->helper_classes = $this->modules->get('WesanoxHelperClasses');
+        $this->helper_fields = $this->modules->get('WesanoxHelperFields');
+
+        $this->fields_array = include $this->config->paths->WesanoxHazardDisplay . 'config/fields.php';
+    }
+
+    /**
+     * Modul config
+     */
+    /**
+     * install function for the module
+     *
+     * @return void
+     * @throws WireException
+     * @throws WirePermissionException
+     */
+    public function ___install() : void
+    {
+        /**
+         * Install internal modules
+         */
+        foreach ($this->internal_modules as $moduleName) {
+            if (!$this->modules->isInstalled($moduleName)) {
+                $this->modules->get($moduleName);
+            }
+        }
+
+        /**
+         * Install external modules
+         */
+        foreach ($this->external_modules as $module_name => $module_url) {
+            if (!$this->modules->isInstalled($module_name)) {
+                $message = $this->helper_classes->downloadInstall($module_name, $module_url);
+                if ($message !== true) $this->error($message);
+            }
+        }
+
+        /**
+         * create fields
+         */
+        foreach ($this->fields_array as $field_array) {
+            $this->helper_fields->createFields($field_array);
+        }
+
+        /**
+         * if not exists, create settings Page or add new Fields
+         * to the settingspage
+         */
+        if ( !$this->templates->get('template=' . $this->template_home)->id && !$this->pages->get('template=' . $this->home)->id ) {
+            $fg = new Fieldgroup();
+            $fg->name = $this->template_home;
+            $this->addFieldsToFieldgroup($fg);
+            $fg->save();
+
+            $t = new Template();
+            $t->name = $this->template_home;
+            $t->label = 'Home';
+            $t->fieldgroup = $fg;
+            $t->icon = 'home';
+            $t->tags = 'Templates';
+            $t->noParents = -1;
+            $t->save();
+        } else {
+            if ($this->pages->get('template=' . $this->home)->id) {
+                $t = $this->templates->get('template=' . $this->home);
+            } else {
+                $t = $this->templates->get('template=' . $this->template_home);
+            }
+
+            $fg = $t->fieldgroup;
+            $this->addFieldsToFieldgroup($fg);
+            $fg->save();
+
+            $t->fieldgroup = $fg;
+            $t->save();
+        }
+    }
+
+    /**
+     * uninstall function for the modul
+     *
+     * @return void
+     * @throws WireException
+     */
+    public function ___uninstall() : void
+    {
+        /**
+         * remove fields from option page
+         */
+        if($this->templates->get('template=' . $this->template_home) || $this->pages->get('template=' . $this->home)) {
+            if ($this->home) {
+                $t = $this->templates->get('template=' . $this->home);
+            } else {
+                $t = $this->templates->get('template=' . $this->template_hom);
+            }
+
+            $fg = $t->fieldgroup;
+            $fg->remove('checkbox_hazard');
+            $fg->remove('link_intern');
+            $fg->remove('link_extern');
+            $fg->remove('link_text');
+            $fg->remove('text');
+            $fg->remove('tab_notice');
+            $fg->remove('tab_notice_END');
+            $fg->save();
+
+            $t->setFieldgroup($fg);
+            $t->save();
+        }
+    }
+
+    /**
+     * @return void
+     */
+    public function ready()
+    {
+        if ($this->page->template != 'admin') {
+            $this->addHookAfter('Page::render', $this, 'getHazardModal');
+        }
+    }
+
+    /**
+     * @param HookEvent $event
+     * @return void
+     */
+    public function getHazardModal(HookEvent $event)
+    {
+        $html = $event->return;
+
+        if($this->templates->get('template=' . $this->template_home) || $this->pages->get('template=' . $this->home)) {
+            if ($this->home) {
+                $t = $this->templates->get('template=' . $this->home);
+            } else {
+                $t = $this->templates->get('template=' . $this->template_hom);
+            }
+
+            $insert = $this->renderHazardModal($t);
+
+            $html = ($this->page->template == $this->template_home || $this->page->template == $this->home ) ? preg_replace('/<body\b([^>]*)>/', "<body$1>\n$insert", $html, 1) : $event->return;
+
+            $event->return = $html;
+        }
+    }
+
+    /**
+     * @param $t
+     * @return string
+     */
+    public function renderHazardModal($t)
+    {
+        if ($t->checkbox_active) {
+            $link = $t->link_extern ?? (($t->link_intern) ? $t->link_intern->url : '');
+            $text = $t->link_text ?? (($t->link_intern) ? $t->link_intern->title : '');
+
+            $link_html = '
+                    <div class="modal-footer">
+                        <a class="btn btn-primary" href="' . $link . '" title="' . $text . '" aria-label="' . $text . '">weitere Information</a>
+                    </div>';
+
+            return '
+                    <div class="modal bg-dark-shadow" id="info-modal" tabindex="-1" aria-labelledby="info-modal-label" aria-hidden="true" style="display: block;">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Information</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    ' . $t->text . '
+                                </div>
+                                ' . $link_html . ' 
+                            </div>
+                        </div>
+                    </div>';
+        } else {
+            return '';
+        }
+    }
+
+    /**
+     * Add fields to fieldgroup
+     *
+     * @param Fieldgroup $fg
+     * @throws WireException
+     */
+    private function addFieldsToFieldgroup($fg) : void
+    {
+        $fg->add('tab_notice');
+        $fg->add('checkbox_hazard');
+        $fg->add('link_intern');
+        $fg->add('link_extern');
+        $fg->add('link_text');
+        $fg->add('text');
+        $fg->add('tab_notice_END');
+    }
+}
