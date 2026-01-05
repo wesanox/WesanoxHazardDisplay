@@ -1,7 +1,7 @@
 <?php
 namespace ProcessWire;
 
-class WesanoxHazardDisplay extends WireData implements Module, ConfigurableModule
+class WesanoxHazardDisplay extends WireData implements Module
 {
     public static function getModuleInfo()
     {
@@ -16,7 +16,6 @@ class WesanoxHazardDisplay extends WireData implements Module, ConfigurableModul
             'autoload' => true,
             'installs' => [
                 'WesanoxFrameworkPackage',
-                'WesanoxHelperFields',
                 'WesanoxHelperClasses'
             ],
             'requires' => [
@@ -31,7 +30,6 @@ class WesanoxHazardDisplay extends WireData implements Module, ConfigurableModul
 
     protected array $external_modules = [
         'WesanoxFrameworkPackage' => 'https://github.com/wesanox/WesanoxFrameworkPackage/archive/refs/heads/main.zip',
-        'WesanoxHelperFields' => 'https://github.com/wesanox/WesanoxHelperFields/archive/refs/heads/main.zip',
         'WesanoxHelperClasses' => 'https://github.com/wesanox/WesanoxHelperClasses/archive/refs/heads/main.zip',
     ];
 
@@ -79,15 +77,6 @@ class WesanoxHazardDisplay extends WireData implements Module, ConfigurableModul
     public function ___install() : void
     {
         /**
-         * Install internal modules
-         */
-        foreach ($this->internal_modules as $moduleName) {
-            if (!$this->modules->isInstalled($moduleName)) {
-                $this->modules->get($moduleName);
-            }
-        }
-
-        /**
          * Install external modules
          */
         foreach ($this->external_modules as $module_name => $module_url) {
@@ -108,7 +97,7 @@ class WesanoxHazardDisplay extends WireData implements Module, ConfigurableModul
          * if not exists, create settings Page or add new Fields
          * to the settingspage
          */
-        if ( !$this->templates->get('template=' . $this->template_home)->id && !$this->pages->get('template=' . $this->home)->id ) {
+        if ( !$this->pages->get($this->template_home) && !$this->pages->get('template=' . $this->home) ) {
             $fg = new Fieldgroup();
             $fg->name = $this->template_home;
             $this->addFieldsToFieldgroup($fg);
@@ -123,10 +112,10 @@ class WesanoxHazardDisplay extends WireData implements Module, ConfigurableModul
             $t->noParents = -1;
             $t->save();
         } else {
-            if ($this->pages->get('template=' . $this->home)->id) {
-                $t = $this->templates->get('template=' . $this->home);
+            if ($this->templates->get($this->home)) {
+                $t = $this->templates->get($this->home);
             } else {
-                $t = $this->templates->get('template=' . $this->template_home);
+                $t = $this->templates->get($this->template_home);
             }
 
             $fg = $t->fieldgroup;
@@ -189,30 +178,26 @@ class WesanoxHazardDisplay extends WireData implements Module, ConfigurableModul
     {
         $html = $event->return;
 
-        if($this->templates->get('template=' . $this->template_home) || $this->pages->get('template=' . $this->home)) {
-            if ($this->home) {
-                $t = $this->templates->get('template=' . $this->home);
-            } else {
-                $t = $this->templates->get('template=' . $this->template_hom);
-            }
+        if($this->page->template($this->template_home) || $this->page->template($this->home)) {
+            $insert = $this->renderHazardModal($this->page);
 
-            $insert = $this->renderHazardModal($t);
+            bd($insert);
 
-            $html = ($this->page->template == $this->template_home || $this->page->template == $this->home ) ? preg_replace('/<body\b([^>]*)>/', "<body$1>\n$insert", $html, 1) : $event->return;
+            $html = ($this->page->template == $this->template_home || $this->page->template == $this->home ) ? preg_replace('/<\/body>/i', "$insert\n</body>", $html, 1) : $event->return;
 
             $event->return = $html;
         }
     }
 
     /**
-     * @param $t
+     * @param $p
      * @return string
      */
-    public function renderHazardModal($t)
+    public function renderHazardModal($p)
     {
-        if ($t->checkbox_active) {
-            $link = $t->link_extern ?? (($t->link_intern) ? $t->link_intern->url : '');
-            $text = $t->link_text ?? (($t->link_intern) ? $t->link_intern->title : '');
+        if ($p->checkbox_hazard) {
+            $link = ($p->link_extern !== '') ? $p->link_extern : (($p->link_intern) ? $p->link_intern->url : '');
+            $text = ($p->link_text !== '') ? $p->link_text : (($p->link_intern) ? $p->link_intern->title : '');
 
             $link_html = '
                     <div class="modal-footer">
@@ -220,7 +205,7 @@ class WesanoxHazardDisplay extends WireData implements Module, ConfigurableModul
                     </div>';
 
             return '
-                    <div class="modal bg-dark-shadow" id="info-modal" tabindex="-1" aria-labelledby="info-modal-label" aria-hidden="true" style="display: block;">
+                    <div class="modal" id="info-modal" tabindex="-1" aria-labelledby="info-modal-label" aria-hidden="true" style="display: block; background-color: rgba(0, 0, 0, 0.5);">
                         <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content">
                                 <div class="modal-header">
@@ -228,12 +213,13 @@ class WesanoxHazardDisplay extends WireData implements Module, ConfigurableModul
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
-                                    ' . $t->text . '
+                                    ' . $p->text . '
                                 </div>
                                 ' . $link_html . ' 
                             </div>
                         </div>
-                    </div>';
+                    </div>
+                    <script src="site/modules/WesanoxHazardDisplay/src/scripts/main.js" type="text/javascript"></script>';
         } else {
             return '';
         }
