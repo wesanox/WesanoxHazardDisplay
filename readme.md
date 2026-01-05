@@ -64,6 +64,9 @@ You must install the following module manually first:
 - WesanoxHelperClasses
 https://github.com/wesanox/WesanoxHelperClasses
 
+- WesanoxHelperFields
+https://github.com/wesanox/WesanoxHelperFields
+
 ---
 
 ### 2. Install WesanoxHazardDisplay

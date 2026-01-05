@@ -15,8 +15,7 @@ class WesanoxHazardDisplay extends WireData implements Module
             'singular' => true,
             'autoload' => true,
             'installs' => [
-                'WesanoxFrameworkPackage',
-                'WesanoxHelperClasses'
+                'WesanoxFrameworkPackage'
             ],
             'requires' => [
                 'ProcessWire>=3.0.246',
@@ -30,7 +29,6 @@ class WesanoxHazardDisplay extends WireData implements Module
 
     protected array $external_modules = [
         'WesanoxFrameworkPackage' => 'https://github.com/wesanox/WesanoxFrameworkPackage/archive/refs/heads/main.zip',
-        'WesanoxHelperClasses' => 'https://github.com/wesanox/WesanoxHelperClasses/archive/refs/heads/main.zip',
     ];
 
     /**
