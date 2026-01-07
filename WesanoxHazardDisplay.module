@@ -178,24 +178,12 @@ class WesanoxHazardDisplay extends WireData implements Module
     {
         $html = $event->return;
 
-        if($this->templates->get($this->template_home)) {
-            if($this->page->template($this->template_home)) {
-                $insert = $this->renderHazardModal($this->page);
+        if ($this->page->id === 1) {
+            $insert = $this->renderHazardModal($this->page);
 
-                $html = ($this->page->template == $this->template_home) ? preg_replace('/<\/body>/i', "$insert\n</body>", $html, 1) : $event->return;
+            $html = ($this->page->id === 1) ? preg_replace('/<\/body>/i', "$insert\n</body>", $html, 1) : $event->return;
 
-                $event->return = $html;
-            }
-        }
-
-        if($this->templates->get($this->home)) {
-            if($this->page->template($this->home)) {
-                $insert = $this->renderHazardModal($this->page);
-
-                $html = ($this->page->template == $this->home) ? preg_replace('/<\/body>/i', "$insert\n</body>", $html, 1) : $event->return;
-
-                $event->return = $html;
-            }
+            $event->return = $html;
         }
     }
 
