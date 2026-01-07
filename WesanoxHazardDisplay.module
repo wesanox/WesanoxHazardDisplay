@@ -8,7 +8,7 @@ class WesanoxHazardDisplay extends WireData implements Module
         return array(
             'title' => 'wesanox Hazard Display Matrix',
             'summary' => 'A Module to implement a Hazard Display Modal in ProcessWire.',
-            'version' => '0.1.1',
+            'version' => '0.2.1',
             'author' => 'Frittenfritze',
             'href' => 'https://wesanox.de',
             'icon' => 'window-maximize',
