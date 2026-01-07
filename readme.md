@@ -16,6 +16,9 @@ Before installing WesanoxHazardDisplay, you must manually install:
 - WesanoxHelperClasses
 https://github.com/wesanox/WesanoxHelperClasses
 
+- WesanoxHelperFields
+https://github.com/wesanox/WesanoxHelperFields
+
 This helper module is required for:
 
 - Automated download & installation of dependencies

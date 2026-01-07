@@ -29,7 +29,6 @@ class WesanoxHazardDisplay extends WireData implements Module
     }
 
     protected array $external_modules = [
-        'WesanoxHelperFields' => 'https://github.com/wesanox/WesanoxHelperFields/archive/refs/heads/main.zip',
         'WesanoxFrameworkPackage' => 'https://github.com/wesanox/WesanoxFrameworkPackage/archive/refs/heads/main.zip',
     ];
 
