@@ -138,7 +138,7 @@ class WesanoxHazardDisplay extends WireData implements Module
         /**
          * remove fields from option page
          */
-        if($this->templates->get('template=' . $this->template_home) || $this->pages->get('template=' . $this->home)) {
+        if($this->templates->find('template=' . $this->template_home) || $this->pages->find('template=' . $this->home)) {
             if ($this->home) {
                 $t = $this->templates->get('template=' . $this->home);
             } else {
@@ -179,12 +179,24 @@ class WesanoxHazardDisplay extends WireData implements Module
     {
         $html = $event->return;
 
-        if($this->page->template($this->template_home) || $this->page->template($this->home)) {
-            $insert = $this->renderHazardModal($this->page);
+        if($this->templates->get($this->template_home)) {
+            if($this->page->template($this->template_home)) {
+                $insert = $this->renderHazardModal($this->page);
 
-            $html = ($this->page->template == $this->template_home || $this->page->template == $this->home ) ? preg_replace('/<\/body>/i', "$insert\n</body>", $html, 1) : $event->return;
+                $html = ($this->page->template == $this->template_home) ? preg_replace('/<\/body>/i', "$insert\n</body>", $html, 1) : $event->return;
 
-            $event->return = $html;
+                $event->return = $html;
+            }
+        }
+
+        if($this->templates->get($this->home)) {
+            if($this->page->template($this->home)) {
+                $insert = $this->renderHazardModal($this->page);
+
+                $html = ($this->page->template == $this->home) ? preg_replace('/<\/body>/i', "$insert\n</body>", $html, 1) : $event->return;
+
+                $event->return = $html;
+            }
         }
     }
 
