@@ -96,7 +96,7 @@ class WesanoxHazardDisplay extends WireData implements Module
          * if not exists, create settings Page or add new Fields
          * to the settingspage
          */
-        if ( !$this->pages->get($this->template_home) && !$this->pages->get('template=' . $this->home) ) {
+        if ( !$this->templates->get($this->template_home) && !$this->templates->get($this->home) ) {
             $fg = new Fieldgroup();
             $fg->name = $this->template_home;
             $this->addFieldsToFieldgroup($fg);
@@ -137,11 +137,11 @@ class WesanoxHazardDisplay extends WireData implements Module
         /**
          * remove fields from option page
          */
-        if($this->templates->find('template=' . $this->template_home) || $this->pages->find('template=' . $this->home)) {
+        if($this->templates->get($this->template_home) || $this->templates->get($this->home)) {
             if ($this->home) {
-                $t = $this->templates->get('template=' . $this->home);
+                $t = $this->templates->get($this->home);
             } else {
-                $t = $this->templates->get('template=' . $this->template_hom);
+                $t = $this->templates->get($this->template_hom);
             }
 
             $fg = $t->fieldgroup;
