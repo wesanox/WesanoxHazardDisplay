@@ -1,0 +1,111 @@
+<?php
+
+namespace ProcessWire;
+
+class ProcessWesanoxHazardDisplay extends Process implements Module, ConfigModule
+{
+    public static function getModuleInfo()
+    {
+        return array(
+            'title' => 'wesanox Hazard Display Matrix Process',
+            'summary' => 'A Module to implement a Hazard Display Modal in ProcessWire.',
+            'version' => '0.5.0',
+            'author' => 'Frittenfritze',
+            'href' => 'https://wesanox.de',
+            'icon' => 'window-maximize',
+            'page'       => array(
+                'name' => 'wesanox-hazard',
+                'parent' => 'setup',
+                'title' => 'Störereinstellung',
+            ),
+            'requires' => 'WesanoxHazardDisplay',
+        );
+    }
+
+    /**
+     * @return void
+     * @throws WireException
+     * @throws WirePermissionException
+     */
+    public function init() : void
+    {
+        $this->wire('modules')->get('JqueryUI')->use('vex');
+        parent::init();
+    }
+
+    /**
+     * @return string
+     * @throws WirePermissionException
+     */
+    public function ___execute() : string
+    {
+        if($this->input->post('submit')) {
+            $data = [
+                'checkbox_hazard'    => $this->input->checkbox_hazard ? 1 : 0,
+                'link_intern_hazard' => $this->sanitizer->int($this->input->post('link_intern_hazard')),
+                'link_extern_hazard' => $this->sanitizer->url($this->input->post('link_extern_hazard')),
+                'link_text_hazard'   => $this->sanitizer->text($this->input->post('link_text_hazard')),
+                'text_hazard'        => $this->sanitizer->textarea($this->input->post('text_hazard')),
+            ];
+
+            $this->modules->saveConfig($this, $data);
+
+            $this->session->redirect($this->page->url);
+        }
+
+        $form = $this->modules->get('InputfieldForm');
+        $wrapper = $this->modules->get('InputfieldWrapper');
+
+        $f = wire('modules')->get('InputfieldCheckbox');
+        $f->name = 'checkbox_hazard';
+        $f->label = __('Störer anzeigen?');
+        $f->description = __('WICHTIG - Störer wird nur bei ausgefühlter URL und Text angezeigt!');
+        $f->columnWidth = 25;
+        $f->optionWidth = 1;
+        if (!empty($this->data['checkbox_hazard'])) $f->checked = 1;
+        $wrapper->add($f);
+
+        $f = wire('modules')->get('InputfieldPage');
+        $f->name = 'link_intern_hazard';
+        $f->label = __('Interner Link');
+        $f->description = __('Interner Link für das Modal.');
+        $f->labelFieldName = 'title';
+        $f->inputfield = 'InputfieldPageListSelect';
+        $f->value = $this->data['link_intern_hazard'];
+        $f->columnWidth = 25;
+        $wrapper->add($f);
+
+        $f = wire('modules')->get('InputfieldText');
+        $f->name = 'link_extern_hazard';
+        $f->label = __('Externer Link');
+        $f->description = __('Externer Link für das Modal - überschreibt den internen Link.');
+        $f->columnWidth = 25;
+        $f->value = $this->data['link_extern_hazard'];
+        $wrapper->add($f);
+
+        $f = wire('modules')->get('InputfieldText');
+        $f->name = 'link_text_hazard';
+        $f->label = __('Link Label (optional)');
+        $f->description = __('Wird nur für das aria-label und titel - Tag verwendet.');
+        $f->columnWidth = 25;
+        $f->value = $this->data['link_text_hazard'];
+        $wrapper->add($f);
+
+        $f = wire('modules')->get('InputfieldTextarea');
+        $f->name = 'text_hazard';
+        $f->label = __('Störertext');
+        $f->description = __('Hinweistext innenhalb des Modals.');
+        $f->columnWidth = 100;
+        $f->value = $this->data['text_hazard'];
+        $wrapper->add($f);
+
+        $submit = $this->modules->get('InputfieldSubmit');
+        $submit->attr('name', 'submit');
+        $submit->attr('value', __('Speichern'));
+        $wrapper->add($submit);
+
+        $form->add($wrapper);
+
+        return $form->render();
+    }
+}

@@ -16,9 +16,6 @@ Before installing WesanoxHazardDisplay, you must manually install:
 - WesanoxHelperClasses
 https://github.com/wesanox/WesanoxHelperClasses
 
-- WesanoxHelperFields
-https://github.com/wesanox/WesanoxHelperFields
-
 This helper module is required for:
 
 - Automated download & installation of dependencies
@@ -33,8 +30,6 @@ This module provides:
 ### Automatic installation of external modules (via ZIP download)
 
 - WesanoxFrameworkPackage
-- WesanoxHelperFields
-- WesanoxHelperClasses
 
 ### Automatic creation of:
 
@@ -86,25 +81,7 @@ https://github.com/wesanox/WesanoxHelperClasses
 During installation, the module will:
 
 - Download and install required external modules if missing
-- Create all fields defined in:
-
-   ```
-   /config/fields.php
-   ```
-
-- Add the following fields to the home template (or create a fallback template if needed):
-
-### Fields Added
-
-- tab_notice
-- checkbox_hazard
-- link_intern
-- link_extern
-- link_text
-- text
-- tab_notice_END
-
-If the template already exists, the fields will be appended automatically.
+- Create a new menu item in the setup menu with the label "Störereinstellungen"
 
 ---
 
@@ -112,7 +89,7 @@ If the template already exists, the fields will be appended automatically.
 
 ## Configuration
 
-The hazard modal is configured directly on the home page template:
+The hazard modal is configured directly on the "Störereinstellungen" Menu Item:
 
 1. Enable the hazard display using:
    - checkbox_hazard
@@ -148,7 +125,6 @@ The output is Bootstrap-compatible and can be styled freely.
 
 On uninstall, the module performs a clean rollback:
 
-- Removes all hazard-related fields from the home template
 - Leaves no frontend hooks active
 - Does not delete shared helper modules
 
@@ -162,9 +138,6 @@ If missing, the module installs:
 
 - WesanoxFrameworkPackage
 https://github.com/wesanox/WesanoxFrameworkPackage
-
-- WesanoxHelperFields
-https://github.com/wesanox/WesanoxHelperFields
 
 - WesanoxHelperClasses
 https://github.com/wesanox/WesanoxHelperClasses

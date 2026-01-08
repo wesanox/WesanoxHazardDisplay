@@ -8,21 +8,20 @@ class WesanoxHazardDisplay extends WireData implements Module
         return array(
             'title' => 'wesanox Hazard Display Matrix',
             'summary' => 'A Module to implement a Hazard Display Modal in ProcessWire.',
-            'version' => '0.2.2',
+            'version' => '0.5.0',
             'author' => 'Frittenfritze',
             'href' => 'https://wesanox.de',
             'icon' => 'window-maximize',
             'singular' => true,
             'autoload' => true,
             'installs' => [
-                'WesanoxHelperFields',
+                'ProcessWesanoxHazardDisplay',
                 'WesanoxFrameworkPackage'
             ],
             'requires' => [
                 'ProcessWire>=3.0.246',
                 'PHP>=8.2.0',
                 'WesanoxFrameworkPackage>=0.0.1',
-                'WesanoxHelperFields>=0.0.1',
                 'WesanoxHelperClasses>=0.0.1',
             ],
         );
@@ -34,21 +33,9 @@ class WesanoxHazardDisplay extends WireData implements Module
 
     /**
      * @var Module|_Module|null $helper_classes
-     * @var Module|_Module|null $helper_fields
      */
-    protected Module|_Module|null $helper_fields;
     protected Module|_Module|null $helper_classes;
 
-    /**
-     * @var array $fields_array
-     */
-    protected array $fields_array = [];
-
-    /**
-     * @var string $template_options
-     */
-    protected string $template_home = 'template_home';
-    protected string $home = 'home';
 
     /**
      * @throws WirePermissionException
@@ -58,9 +45,6 @@ class WesanoxHazardDisplay extends WireData implements Module
         parent::__construct();
 
         $this->helper_classes = $this->modules->get('WesanoxHelperClasses');
-        $this->helper_fields = $this->modules->get('WesanoxHelperFields');
-
-        $this->fields_array = include $this->config->paths->WesanoxHazardDisplay . 'config/fields.php';
     }
 
     /**
@@ -80,82 +64,8 @@ class WesanoxHazardDisplay extends WireData implements Module
          */
         foreach ($this->external_modules as $module_name => $module_url) {
             if (!$this->modules->isInstalled($module_name)) {
-                $message = $this->helper_classes->downloadInstall($module_name, $module_url);
-                if ($message !== true) $this->error($message);
+                $this->helper_classes->downloadInstall($module_name, $module_url);
             }
-        }
-
-        /**
-         * create fields
-         */
-        foreach ($this->fields_array as $field_array) {
-            $this->helper_fields->createFields($field_array);
-        }
-
-        /**
-         * if not exists, create settings Page or add new Fields
-         * to the settingspage
-         */
-        if ( !$this->templates->get($this->template_home) && !$this->templates->get($this->home) ) {
-            $fg = new Fieldgroup();
-            $fg->name = $this->template_home;
-            $this->addFieldsToFieldgroup($fg);
-            $fg->save();
-
-            $t = new Template();
-            $t->name = $this->template_home;
-            $t->label = 'Home';
-            $t->fieldgroup = $fg;
-            $t->icon = 'home';
-            $t->tags = 'Templates';
-            $t->noParents = -1;
-            $t->save();
-        } else {
-            if ($this->templates->get($this->home)) {
-                $t = $this->templates->get($this->home);
-            } else {
-                $t = $this->templates->get($this->template_home);
-            }
-
-            $fg = $t->fieldgroup;
-            $this->addFieldsToFieldgroup($fg);
-            $fg->save();
-
-            $t->fieldgroup = $fg;
-            $t->save();
-        }
-    }
-
-    /**
-     * uninstall function for the modul
-     *
-     * @return void
-     * @throws WireException
-     */
-    public function ___uninstall() : void
-    {
-        /**
-         * remove fields from option page
-         */
-        if($this->templates->get($this->template_home) || $this->templates->get($this->home)) {
-            if ($this->home) {
-                $t = $this->templates->get($this->home);
-            } else {
-                $t = $this->templates->get($this->template_hom);
-            }
-
-            $fg = $t->fieldgroup;
-            $fg->remove('checkbox_hazard');
-            $fg->remove('link_intern');
-            $fg->remove('link_extern');
-            $fg->remove('link_text');
-            $fg->remove('text');
-            $fg->remove('tab_notice');
-            $fg->remove('tab_notice_END');
-            $fg->save();
-
-            $t->setFieldgroup($fg);
-            $t->save();
         }
     }
 
@@ -198,13 +108,21 @@ class WesanoxHazardDisplay extends WireData implements Module
             return '';
         }
 
-        if ($p->checkbox_hazard && $p->text !== '' && ($p->link_intern || $p->link_extern !== '')) {
-            $link = ($p->link_extern !== '') ? $p->link_extern : (($p->link_intern) ? $p->link_intern->url : '');
-            $text = ($p->link_text !== '') ? $p->link_text : (($p->link_intern) ? $p->link_intern->title : '');
+        $cfg = $this->modules->getConfig('ProcessWesanoxHazardDisplay');
+
+        $checkbox_hazard = !empty($cfg['checkbox_hazard']);
+        $link_extern_hazard = (string)($cfg['link_extern_hazard'] ?? '');
+        $link_intern_hazard = (int)($cfg['link_intern_hazard'] ?? 0);
+        $link_text_hazard = (string)($cfg['link_text_hazard'] ?? '');
+        $text_hazard = (string)($cfg['text_hazard'] ?? '');
+
+        if ($checkbox_hazard && $text_hazard !== '' && ($link_intern_hazard || $link_extern_hazard !== '')) {
+            $link = ($link_extern_hazard !== '') ? $link_extern_hazard : (($link_intern_hazard) ? $this->pages->get($link_intern_hazard)->url : '');
+            $aria_label = ($link_text_hazard !== '') ? $link_text_hazard : (($link_intern_hazard) ? $this->pages->get($link_intern_hazard) : '');
 
             $link_html = '
                     <div class="modal-footer">
-                        <a class="btn btn-primary" href="' . $link . '" title="' . $text . '" aria-label="' . $text . '">weitere Information</a>
+                        <a class="btn btn-primary" href="' . $link . '" title="' . $aria_label . '" aria-label="' . $aria_label . '">weitere Information</a>
                     </div>';
 
             return '
@@ -216,7 +134,7 @@ class WesanoxHazardDisplay extends WireData implements Module
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
-                                    ' . $p->text . '
+                                    ' . $text_hazard . '
                                 </div>
                                 ' . $link_html . ' 
                             </div>
@@ -226,22 +144,5 @@ class WesanoxHazardDisplay extends WireData implements Module
         } else {
             return '';
         }
-    }
-
-    /**
-     * Add fields to fieldgroup
-     *
-     * @param Fieldgroup $fg
-     * @throws WireException
-     */
-    private function addFieldsToFieldgroup($fg) : void
-    {
-        $fg->add('tab_notice');
-        $fg->add('checkbox_hazard');
-        $fg->add('link_intern');
-        $fg->add('link_extern');
-        $fg->add('link_text');
-        $fg->add('text');
-        $fg->add('tab_notice_END');
     }
 }
